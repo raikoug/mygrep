@@ -19,6 +19,26 @@ mygrep regex_pattern file.txt -R
 mygrep pattern file.txt -I -c magenta
 cat file.txt | mygrep pattern 
 cat file.txt | mygrep regex_pattern -R
+
+mygrep --help
+Usage: mygrep.exe [OPTIONS] <PATTERN> [PATH]
+
+Arguments:
+  <PATTERN>  The pattern to look for
+  [PATH]     The path to the file to read
+
+Options:
+  -c, --color <COLOR>  Color to use [default: red] [possible values: red, green, blue, yellow, magenta, cyan, white, black, bright-red, bright-green, bright-blue, bright-yellow, bright-magenta, bright-cyan, bright-white]
+  -b, --bold           Bold
+  -u, --underline      Underline
+  -i, --italic         Italic
+  -s, --strike         StrikeThrough
+  -l, --line-numbers   Show LineNumbers
+  -R, --regex          Pattern is a Regex
+  -I, --insensitive    Case Insensitive
+  -d, --debug          Debug
+  -h, --help           Print help
+  -V, --version        Print version
 ```
 ## Setting up MyGrep with Windows Environment Variables
 

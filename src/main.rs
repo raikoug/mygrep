@@ -11,7 +11,7 @@ use std::process;
 #[derive(Parser, Debug, Clone)]
 #[command(name = "MyGrep")]
 #[command(author = "Riccardo Bella <raikoug@gmail.com>")]
-#[command(version = "0.1")]
+#[command(version = "1.0.0")]
 #[command(about = "Grep Equivalent", long_about = None)]
 #[command(author, version, about, long_about = None)]
 #[command(about, version, after_help = 
