@@ -20,8 +20,27 @@ mygrep pattern file.txt -I -c magenta
 cat file.txt | mygrep pattern 
 cat file.txt | mygrep regex_pattern -R
 ```
+## Setting up MyGrep with Windows Environment Variables
 
-Exit Codes
+To use `mygrep` from any location in the command prompt, you need to add it to your Windows environment variables. Here's how you can do it:
+
+1. Locate the directory where `mygrep` is installed. For example, it might be `C:\Users\YourUsername\mygrep`.
+
+2. Right-click on 'This PC' (or 'My Computer') and choose 'Properties'.
+
+3. Click on 'Advanced system settings'.
+
+4. In the System Properties window that appears, click on the 'Environment Variables...' button.
+
+5. In the Environment Variables window, under 'System variables', find the 'Path' variable, select it, and click 'Edit...'.
+
+6. In the Edit Environment Variable window, click 'New' and then add the path to the `mygrep` directory.
+
+7. Click 'OK' in all windows to apply the changes.
+
+Now, you should be able to use `mygrep` from any location in the command prompt. Just type `mygrep` followed by your commands.
+
+# Exit Codes
 ```
 0: Success
 1: Generic Error
