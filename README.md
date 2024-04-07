@@ -86,7 +86,7 @@ Author
 Riccardo Bella raikoug@gmail.com
 ```
 
-Version
-1.0
+Latest Version
+1.1.0
 
 
