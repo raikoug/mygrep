@@ -4,14 +4,14 @@ use colored::*;
 use std::io::{self, BufRead};
 use regex::Regex;
 use std::error::Error;
-use std::process;
+use std::{process, vec};
 
 
 /// Search for a pattern in a file and display the lines that contain it.
 #[derive(Parser, Debug, Clone)]
 #[command(name = "MyGrep")]
 #[command(author = "Riccardo Bella <raikoug@gmail.com>")]
-#[command(version = "1.0.0")]
+#[command(version = "1.1.0")]
 #[command(about = "Grep Equivalent", long_about = None)]
 #[command(author, version, about, long_about = None)]
 #[command(about, version, after_help = 
@@ -26,6 +26,10 @@ use std::process;
     The line_numbers option is used to show the line number of the pattern found.\n\
     The regex option is used to search for a regex pattern.\n\
     The insensitive option is used to search for a case insensitive pattern.\n\
+    The after option is used to print the number of lines after the match (not compatible with section).\n\
+    The before option is used to print the number of lines before the match (not compatible with section).\n\
+    The section option is used to print the section (same indentation or more) of the file where the pattern is found. (Not compatible with after and or before)\n\
+    The tabs_c option is used to set the number of spaces for a tab. Default is 4.\n\
     The debug option is used to print all the args for debug.\n\
     \n\
     Example:\n\
@@ -53,7 +57,7 @@ struct Cli {
     color: Colors,
     
     /// Bold
-    #[arg(short, long, default_value_t = true)]
+    #[arg(short = 'B', long, default_value_t = true)]
     bold: bool,
 
     /// Underline
@@ -79,6 +83,22 @@ struct Cli {
     /// Case Insensitive
     #[arg(short = 'I', long, default_value_t = false)]
     insensitive: bool,
+
+    /// After
+    #[arg(short, long, default_value_t = 0)]
+    after: usize,
+
+    /// Before
+    #[arg(short, long, default_value_t = 0)]
+    before: usize,
+
+    /// Section
+    #[arg(short = 'S', long, default_value_t = false)]
+    section: bool,
+
+    /// Tabs count
+    #[arg(short, long, default_value_t = 4)]
+    tabs_c: usize,
 
     /// Debug
     #[arg(short, long, default_value_t = false)]
@@ -136,8 +156,17 @@ fn get_grep_indexes(line: &str, regex_pattern: &str) -> Vec<(usize, usize)>{
     indexes
 }
 
+fn indentation(line: &str, tabs_c: usize) -> usize {
+    // return the number of spaces at the beginning of the line
+    let spaces = line.chars().take_while(|&c| c == ' ').count();
+    let tabs = line.chars().take_while(|&c| c == '\t').count() * tabs_c;
+
+    spaces + tabs
+
+}
+
 fn main() -> Result<()> {
-    let args = Cli::parse();
+    let mut args = Cli::parse();
 
     // print all args for debug
     if args.debug {
@@ -152,6 +181,9 @@ fn main() -> Result<()> {
         println!("args.line_numbers: {}", args.line_numbers);
         println!("args.regex:        {}", args.regex);
         println!("args.insensitive:  {}", args.insensitive);
+        println!("args.after:        {}", args.after);
+        println!("args.before:       {}", args.before);
+        println!("args.section:      {}", args.section);
         println!("args.debug:        {}", args.debug);
         println!("----------------------------");
         println!();
@@ -172,6 +204,17 @@ fn main() -> Result<()> {
             content.push_str("\n");
         }
     }
+
+    // If section is true and before and after are != 0, print warning and set after and before to 0
+    if args.section && (args.before != 0 || args.after != 0) {
+        eprintln!("Section is not compatible with after and or before. Ignoring After and or Before.");
+        args.after = 0;
+        args.before = 0;
+    }
+    // the section behaviour could print multiple time the same section, this avoid this behavior.
+    let mut sections_to_print: Vec<usize> = vec![];
+    // init a found_rows to keep colored lines to be printed with found pattern, a tuple of index and string
+    let mut found_rows: Vec<(usize, String)> = vec![];
 
     // color must be string to use it in replace
     let color = format!("{:?}", args.color);
@@ -218,13 +261,107 @@ fn main() -> Result<()> {
                     if args.line_numbers {
                         colored_line = format!("{}: {}", index+1, colored_line);
                     }
-                    println!("{}", colored_line);
+
+                    // Before lines, args.before is the number of lines to print before the match, default 0
+                    if args.before > 0 {
+                        if index >= 1 {
+                            let mut before_indexes = vec![];
+                            for i in 1..=args.before {
+                                if index < i {
+                                    break;
+                                }
+                                let tmp_index = index - i;
+
+                                before_indexes.push(tmp_index);
+                            }
+                            before_indexes.reverse();
+                            for i in before_indexes {
+                                let before_line = content.lines().nth(i).unwrap();
+                                println!("{}", before_line);
+                            }
+                        }
+                    }
+
+                    if !args.section{
+                        println!("{}", colored_line);
+                    }
+
+                    // After lines, args.after is the number of lines to print after the match, default 0
+                    if args.after > 0 {
+                        for i in 1..=args.after {
+                            if index + i < content.lines().count() {
+                                let after_line = content.lines().nth(index + i).unwrap();
+                                println!("{}", after_line);
+                            }
+                        }
+                    }
+
+                    // Section, if true print the section.
+                    //   Section is the same indentation or more of the line where the pattern is found.
+                    //   Section can start before the finding
+                    if args.section {
+                        // init indentation
+                        let starting_indentation = indentation(&line, args.tabs_c);
+                        sections_to_print.push(index);
+                        // keep the index where pattern is found along with colored string
+                        found_rows.push((index, colored_line));
+                        
+                        // scroll backwards indexes, break if indentation is <= starting_indentation
+                        for i in (0..index).rev() {
+                            let tmp_line = content.lines().nth(i).unwrap();
+                            let tmp_indentation = indentation(&tmp_line, args.tabs_c);
+                            if tmp_indentation < starting_indentation {
+                                // if indentation is <= starting_indentation, break
+                                //   get the index as head of the section
+                                sections_to_print.push(i);
+                                break;
+                            }
+                            sections_to_print.push(i);
+                        }
+
+                        // scroll forward indexes, break if indentation is < starting_indentation
+                        for i in index..content.lines().count() {
+                            let tmp_line = content.lines().nth(i).unwrap();
+                            let tmp_indentation = indentation(&tmp_line, args.tabs_c);
+                            if tmp_indentation < starting_indentation {
+                                // if indentation is < starting_indentation, break
+                                break;
+                            }
+                            sections_to_print.push(i);
+                        }
+
+                    }
                 }
+
             },
             Err(_) => {
                 let error_message = "Pattern is not a valid regex: ".color("red").bold().to_string();
                 eprintln!("{error_message} {}", pattern_to_search.color("magenta").bold());
                 process::exit(2);
+            }
+        }
+    }
+
+    if args.section{
+        // sections_to_print is a list olf indexes to print, but are unordered and maybe duplicate.
+        //   we need to sort and remove duplicates
+        sections_to_print.sort();
+        sections_to_print.dedup();
+
+        // print all indexes in sections_to_print
+        for index in sections_to_print {
+            // if index in found_rows, print the colored line instead of the normal line
+            if found_rows.iter().any(|x| x.0 == index) {
+                let colored_line = found_rows.iter().find(|&x| x.0 == index).unwrap().1.clone();
+                println!("{}", colored_line);
+                continue;
+            }
+
+            let line = content.lines().nth(index).unwrap();
+            if args.line_numbers {
+                println!("{}: {}", index+1, line);
+            } else {
+                println!("{}", line);
             }
         }
     }

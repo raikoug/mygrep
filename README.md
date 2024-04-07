@@ -28,17 +28,21 @@ Arguments:
   [PATH]     The path to the file to read
 
 Options:
-  -c, --color <COLOR>  Color to use [default: red] [possible values: red, green, blue, yellow, magenta, cyan, white, black, bright-red, bright-green, bright-blue, bright-yellow, bright-magenta, bright-cyan, bright-white]
-  -b, --bold           Bold
-  -u, --underline      Underline
-  -i, --italic         Italic
-  -s, --strike         StrikeThrough
-  -l, --line-numbers   Show LineNumbers
-  -R, --regex          Pattern is a Regex
-  -I, --insensitive    Case Insensitive
-  -d, --debug          Debug
-  -h, --help           Print help
-  -V, --version        Print version
+  -c, --color <COLOR>    Color to use [default: red] [possible values: red, green, blue, yellow, magenta, cyan, white, black, bright-red, bright-green, bright-blue, bright-yellow, bright-magenta, bright-cyan, bright-white]
+  -b, --bold             Bold
+  -u, --underline        Underline
+  -i, --italic           Italic
+  -s, --strike           StrikeThrough
+  -l, --line-numbers     Show LineNumbers
+  -R, --regex            Pattern is a Regex
+  -a, --after <AFTER>    Show lines after the match
+  -b, --before <BEFORE>  Show lines before the match
+  -S, --section          Show lines before and after the match
+  -t, --tabs_c           Value of spaces to evaluate a tab
+  -I, --insensitive      Case Insensitive
+  -d, --debug            Debug
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 ## Setting up MyGrep with Windows Environment Variables
 
@@ -59,6 +63,17 @@ To use `mygrep` from any location in the command prompt, you need to add it to y
 7. Click 'OK' in all windows to apply the changes.
 
 Now, you should be able to use `mygrep` from any location in the command prompt. Just type `mygrep` followed by your commands.
+
+# Build it youself
+```bash
+git clone
+cd mygrep
+cargo build --release
+```
+Move it to the path
+```bash
+cp target/release/mygrep /usr/local/bin
+```
 
 # Exit Codes
 ```
